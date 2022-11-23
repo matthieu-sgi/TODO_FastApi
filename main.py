@@ -1,13 +1,16 @@
+# from __future__ import annotations
+
 from fastapi import FastAPI
 
+import json
 
-todos = []
+todos : list = []
 class Task:
-    def __init__(self, title: str, description: str):
-        self.id : int = len(todos)
+    def __init__(self, id: int,  title: str, state :int, due_date : str, description: str):
+        self.id : int = len(todos) if id == -1 else id
         self.title : str = title
-        self.state : int = 0 # 0: todo, 1: done
-        self.due_date :str = "2021-12-31"
+        self.state : int = state # 0: todo, 1: done
+        self.due_date :str = "2021-12-31" if due_date == "" else due_date
         self.description :str = description
     
     def to_dict(self):
@@ -19,6 +22,12 @@ class Task:
             "due_date": self.due_date,
             "description": self.description
         }
+    @staticmethod
+    def from_dict(input_dict : dict):
+        """Converts a dictionary to an object"""
+        return Task(input_dict["id"], input_dict["title"], input_dict["state"], input_dict["due_date"], input_dict["description"])
+
+
   
 app = FastAPI()
 
@@ -46,13 +55,13 @@ async def get_todo(todo_id: int):
     for task in todos:
         if task.id == todo_id:
             return task.to_dict()
-    return {"message": "Todo not found"}
+    return 404, {"message": "Todo not found"}
 
 @app.post("/todos")
-async def create_todo():
+async def create_todo(id: int,  title: str, state :int, due_date : str, description: str):
     """Create a new todo"""
-    todo = Task("Foo", "Bar")
-    todos.append(todo)
+    
+    todos.append(Task(id, title, state, due_date, description))
     return {"message": "Todo created"}
 
 
@@ -64,4 +73,4 @@ async def delete_todo(todo_id: int):
         if task.id == todo_id:
             todos.remove(task)
             return {"message": "Todo deleted"}
-    return {"message": "Todo not found"}
+    return 404, {"message": "Todo not found"}
